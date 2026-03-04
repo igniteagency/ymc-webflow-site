@@ -5,6 +5,7 @@ import '$utils/disable-webflow-scroll';
 import { disableWebflowAnchorSmoothScroll } from '$utils/disable-webflow-scroll';
 import handleExternalLinks from '$utils/external-link';
 import addMainElementId from '$utils/main-element-id';
+import { initBgColorChange } from '$utils/bg-color-change';
 import { duplicateMarqueeList } from '$utils/marquee-list';
 
 window.Webflow = window.Webflow || [];
@@ -24,7 +25,12 @@ window.Webflow?.push(() => {
   webflowOverrides();
 
   loadScrollTimelineCSSPolyfill();
+  loadVideoPlayer();
 });
+
+function loadVideoPlayer() {
+  window.conditionalLoadScript('[data-video-el="vimeo"]', 'components/inline-video-player.js');
+}
 
 function initComponents() {
   new Dialog();
@@ -33,6 +39,7 @@ function initComponents() {
 function UIFunctions() {
   duplicateMarqueeList();
   animatedDetailsAccordions();
+  initBgColorChange();
 }
 
 function webflowOverrides() {
