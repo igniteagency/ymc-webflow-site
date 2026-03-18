@@ -1,6 +1,7 @@
 /**
  * Popups with dialog HTML element
  * Set `data-dialog-id="{unique-number}"` attribute on the dialog element to target it
+ * Set `data-dialog-lock-scroll` attribute on the dialog element to lock page scroll while it is open
  * Set `data-dialog-open="{unique-number}"` attribute on open trigger element(s) to open the dialog
  * Set `data-dialog-close="{unique-number}"` attribute on close trigger element(s) to close the dialog. Close triggers should be inside the dialog element
  *
@@ -8,10 +9,24 @@
  */
 class Dialog {
   private readonly DATA_ATTR = 'data-dialog-id';
+  private readonly DATA_ATTR_LOCK_SCROLL = 'data-dialog-lock-scroll';
   private readonly DATA_ATTR_OPEN = 'data-dialog-open';
   private readonly DATA_ATTR_CLOSE = 'data-dialog-close';
   private readonly DATA_COMPONENT_SELECTOR = `dialog[${this.DATA_ATTR}]`;
   private initializedIds = new Set<string>();
+  private bodyScrollLockState: {
+    scrollY: number;
+    bodyStyles: {
+      overflow: string;
+      left: string;
+      paddingRight: string;
+      position: string;
+      right: string;
+      top: string;
+      width: string;
+    };
+    htmlOverflow: string;
+  } | null = null;
 
   constructor() {
     this.init();
@@ -60,6 +75,7 @@ class Dialog {
 
   private openDialog(dialogEl: HTMLDialogElement) {
     dialogEl.showModal();
+    this.updateBodyScrollLock();
 
     // new custom event
     const dialogOpenEvent = new CustomEvent('dialogOpen', {
@@ -73,11 +89,81 @@ class Dialog {
       dialogEl.close();
     }
 
+    this.updateBodyScrollLock();
+
     // new custom event
     const dialogCloseEvent = new CustomEvent('dialogClose', {
       detail: { dialogId: dialogEl.getAttribute(this.DATA_ATTR) },
     });
     dialogEl.dispatchEvent(dialogCloseEvent);
+  }
+
+  private updateBodyScrollLock() {
+    const hasLockingDialogOpen = Array.from(
+      document.querySelectorAll<HTMLDialogElement>(
+        `${this.DATA_COMPONENT_SELECTOR}[${this.DATA_ATTR_LOCK_SCROLL}]`,
+      ),
+    ).some((dialogEl) => dialogEl.open);
+
+    if (hasLockingDialogOpen) {
+      this.lockBodyScroll();
+      return;
+    }
+
+    this.unlockBodyScroll();
+  }
+
+  private lockBodyScroll() {
+    if (this.bodyScrollLockState) return;
+
+    const { body, documentElement } = document;
+    const scrollY = window.scrollY;
+    const scrollbarWidth = window.innerWidth - documentElement.clientWidth;
+
+    this.bodyScrollLockState = {
+      scrollY,
+      bodyStyles: {
+        overflow: body.style.overflow,
+        left: body.style.left,
+        paddingRight: body.style.paddingRight,
+        position: body.style.position,
+        right: body.style.right,
+        top: body.style.top,
+        width: body.style.width,
+      },
+      htmlOverflow: documentElement.style.overflow,
+    };
+
+    documentElement.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.left = '0';
+    body.style.right = '0';
+    body.style.width = '100%';
+
+    if (scrollbarWidth > 0) {
+      body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+  }
+
+  private unlockBodyScroll() {
+    if (!this.bodyScrollLockState) return;
+
+    const { body, documentElement } = document;
+    const { bodyStyles, htmlOverflow, scrollY } = this.bodyScrollLockState;
+
+    documentElement.style.overflow = htmlOverflow;
+    body.style.overflow = bodyStyles.overflow;
+    body.style.left = bodyStyles.left;
+    body.style.paddingRight = bodyStyles.paddingRight;
+    body.style.position = bodyStyles.position;
+    body.style.right = bodyStyles.right;
+    body.style.top = bodyStyles.top;
+    body.style.width = bodyStyles.width;
+
+    this.bodyScrollLockState = null;
+    window.scrollTo(0, scrollY);
   }
 
   /**
