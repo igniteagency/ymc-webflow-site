@@ -46,6 +46,8 @@ function UIFunctions() {
   duplicateMarqueeList();
   animatedDetailsAccordions();
   initBgColorChange();
+
+  window.conditionalLoadScript('.swiper', 'components/slider.js');
 }
 
 function webflowOverrides() {
