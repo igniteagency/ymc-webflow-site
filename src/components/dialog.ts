@@ -157,7 +157,7 @@ class Dialog {
           rect.left <= event.clientX &&
           event.clientX <= rect.left + rect.width;
 
-        if (clickedInDialog && event.target === dialogEl) {
+        if (!clickedInDialog && event.target === dialogEl) {
           this.closeDialog(dialogEl);
         }
       });

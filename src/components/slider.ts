@@ -10,6 +10,7 @@ class Slider {
   PAGINATION_SELECTOR = '[data-slider-el="pagination"], .swiper-pagination';
 
   CUSTOM_GAP_ATTR = 'data-slider-gap';
+  CROSSFADE_ATTR = 'data-slider-crossfade';
 
   swiperComponents: NodeListOf<HTMLElement> | [];
   swiper: Swiper | null;
@@ -56,36 +57,43 @@ class Slider {
       // Per-instance gap from wrapper attribute (default 32)
       const gapAttr = swiperComponent.getAttribute(this.CUSTOM_GAP_ATTR);
       const gap = gapAttr !== null && gapAttr !== undefined ? Number.parseFloat(gapAttr) : 0;
+      const hasCrossfade = swiperComponent.hasAttribute(this.CROSSFADE_ATTR);
 
       this.swiper = new Swiper(swiperEl, {
-        loop: false,
-        spaceBetween: gap,
-        slidesPerView: 'auto',
+        effect: hasCrossfade ? 'fade' : 'slide',
+        loop: true,
+        spaceBetween: hasCrossfade ? 0 : gap,
+        slidesPerView: hasCrossfade ? 1 : 'auto',
         navigation: navigationConfig,
         pagination: paginationConfig,
         slideActiveClass: 'is-active',
         slidePrevClass: 'is-previous',
         slideNextClass: 'is-next',
+        fadeEffect: hasCrossfade
+          ? {
+              crossFade: true,
+            }
+          : undefined,
         a11y: {
           enabled: true,
         },
-        breakpoints: {
-          320: {
-            spaceBetween: gap / 2,
-          },
-          600: {
-            spaceBetween: gap / 1.5,
-          },
-          992: {
-            spaceBetween: gap,
-          },
-        },
+        breakpoints: hasCrossfade
+          ? undefined
+          : {
+              320: {
+                spaceBetween: gap / 2,
+              },
+              600: {
+                spaceBetween: gap / 1.5,
+              },
+              992: {
+                spaceBetween: gap,
+              },
+            },
       });
     });
   }
 }
-
-window.loadCSS('https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css');
 
 window.loadScript('https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js', {
   name: 'swiper',
