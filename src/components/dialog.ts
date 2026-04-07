@@ -15,16 +15,8 @@ class Dialog {
   private readonly DATA_COMPONENT_SELECTOR = `dialog[${this.DATA_ATTR}]`;
   private initializedIds = new Set<string>();
   private bodyScrollLockState: {
-    scrollY: number;
-    bodyStyles: {
-      overflow: string;
-      left: string;
-      paddingRight: string;
-      position: string;
-      right: string;
-      top: string;
-      width: string;
-    };
+    bodyOverflow: string;
+    bodyPaddingRight: string;
     htmlOverflow: string;
   } | null = null;
 
@@ -117,30 +109,16 @@ class Dialog {
     if (this.bodyScrollLockState) return;
 
     const { body, documentElement } = document;
-    const scrollY = window.scrollY;
     const scrollbarWidth = window.innerWidth - documentElement.clientWidth;
 
     this.bodyScrollLockState = {
-      scrollY,
-      bodyStyles: {
-        overflow: body.style.overflow,
-        left: body.style.left,
-        paddingRight: body.style.paddingRight,
-        position: body.style.position,
-        right: body.style.right,
-        top: body.style.top,
-        width: body.style.width,
-      },
+      bodyOverflow: body.style.overflow,
+      bodyPaddingRight: body.style.paddingRight,
       htmlOverflow: documentElement.style.overflow,
     };
 
     documentElement.style.overflow = 'hidden';
     body.style.overflow = 'hidden';
-    body.style.position = 'fixed';
-    body.style.top = `-${scrollY}px`;
-    body.style.left = '0';
-    body.style.right = '0';
-    body.style.width = '100%';
 
     if (scrollbarWidth > 0) {
       body.style.paddingRight = `${scrollbarWidth}px`;
@@ -151,19 +129,13 @@ class Dialog {
     if (!this.bodyScrollLockState) return;
 
     const { body, documentElement } = document;
-    const { bodyStyles, htmlOverflow, scrollY } = this.bodyScrollLockState;
+    const { bodyOverflow, bodyPaddingRight, htmlOverflow } = this.bodyScrollLockState;
 
     documentElement.style.overflow = htmlOverflow;
-    body.style.overflow = bodyStyles.overflow;
-    body.style.left = bodyStyles.left;
-    body.style.paddingRight = bodyStyles.paddingRight;
-    body.style.position = bodyStyles.position;
-    body.style.right = bodyStyles.right;
-    body.style.top = bodyStyles.top;
-    body.style.width = bodyStyles.width;
+    body.style.overflow = bodyOverflow;
+    body.style.paddingRight = bodyPaddingRight;
 
     this.bodyScrollLockState = null;
-    window.scrollTo(0, scrollY);
   }
 
   /**
