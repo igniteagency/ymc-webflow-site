@@ -4,16 +4,19 @@
  * Set `data-dialog-lock-scroll` attribute on the dialog element to lock page scroll while it is open
  * Set `data-dialog-open="{unique-number}"` attribute on open trigger element(s) to open the dialog
  * Set `data-dialog-close="{unique-number}"` attribute on close trigger element(s) to close the dialog. Close triggers should be inside the dialog element
+ * If a single dialog and its triggers live inside `[data-dialog-container]`, the ID can be omitted and will be assigned automatically
  *
  * TODO: make it work with the new `command` and `commandfor` libraries with fallback polyfill script
  */
 class Dialog {
+  private readonly DATA_CONTAINER = 'data-dialog-container';
   private readonly DATA_ATTR = 'data-dialog-id';
   private readonly DATA_ATTR_LOCK_SCROLL = 'data-dialog-lock-scroll';
   private readonly DATA_ATTR_OPEN = 'data-dialog-open';
   private readonly DATA_ATTR_CLOSE = 'data-dialog-close';
   private readonly DATA_COMPONENT_SELECTOR = `dialog[${this.DATA_ATTR}]`;
   private initializedIds = new Set<string>();
+  private generatedIdCount = 0;
   private bodyScrollLockState: {
     bodyOverflow: string;
     bodyPaddingRight: string;
@@ -26,6 +29,8 @@ class Dialog {
   }
 
   private init() {
+    this.normalizeContainerScopedDialogs();
+
     const dialogList = document.querySelectorAll<HTMLDialogElement>(this.DATA_COMPONENT_SELECTOR);
 
     dialogList.forEach((dialogEl) => {
@@ -63,6 +68,47 @@ class Dialog {
         this.closeDialog(dialogEl, true);
       });
     });
+  }
+
+  private normalizeContainerScopedDialogs() {
+    const containerList = document.querySelectorAll<HTMLElement>(`[${this.DATA_CONTAINER}]`);
+
+    containerList.forEach((containerEl) => {
+      const dialogList = containerEl.querySelectorAll<HTMLDialogElement>('dialog');
+      if (dialogList.length !== 1) return;
+
+      const dialogEl = dialogList[0];
+      const dialogId = dialogEl.getAttribute(this.DATA_ATTR) || this.createDialogId();
+
+      dialogEl.setAttribute(this.DATA_ATTR, dialogId);
+      this.populateContainerTriggerIds(containerEl, this.DATA_ATTR_OPEN, dialogId);
+      this.populateContainerTriggerIds(containerEl, this.DATA_ATTR_CLOSE, dialogId);
+    });
+  }
+
+  private populateContainerTriggerIds(
+    containerEl: HTMLElement,
+    attributeName: string,
+    dialogId: string,
+  ) {
+    const triggerList = containerEl.querySelectorAll<HTMLElement>(`[${attributeName}]`);
+
+    triggerList.forEach((triggerEl) => {
+      if (triggerEl.getAttribute(attributeName) === '') {
+        triggerEl.setAttribute(attributeName, dialogId);
+      }
+    });
+  }
+
+  private createDialogId() {
+    let dialogId = '';
+
+    do {
+      this.generatedIdCount += 1;
+      dialogId = `dialog-${this.generatedIdCount}`;
+    } while (document.querySelector(`[${this.DATA_ATTR}="${dialogId}"]`));
+
+    return dialogId;
   }
 
   private openDialog(dialogEl: HTMLDialogElement) {
