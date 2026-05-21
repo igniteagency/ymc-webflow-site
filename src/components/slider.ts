@@ -11,6 +11,8 @@ class Slider {
 
   CUSTOM_GAP_ATTR = 'data-slider-gap';
   CROSSFADE_ATTR = 'data-slider-crossfade';
+  AUTOPLAY_ATTR = 'data-slider-autoplay';
+  AUTOPLAY_DURATION_ATTR = 'data-slider-autoplay-duration';
 
   swiperComponents: NodeListOf<HTMLElement> | [];
   swiper: Swiper | null;
@@ -59,9 +61,34 @@ class Slider {
       const gap = gapAttr !== null && gapAttr !== undefined ? Number.parseFloat(gapAttr) : 0;
       const hasCrossfade = swiperComponent.hasAttribute(this.CROSSFADE_ATTR);
 
+      // Autoplay configuration
+      const autoplayAttr = swiperComponent.getAttribute(this.AUTOPLAY_ATTR);
+      const hasAutoplay = autoplayAttr !== null && autoplayAttr !== 'false';
+
+      let autoplayDelay = 3000;
+      if (autoplayAttr && !Number.isNaN(Number.parseInt(autoplayAttr, 10))) {
+        autoplayDelay = Number.parseInt(autoplayAttr, 10);
+      } else {
+        const durationAttr =
+          swiperComponent.getAttribute(this.AUTOPLAY_DURATION_ATTR) ||
+          swiperComponent.getAttribute('data-slider-duration');
+        if (durationAttr && !Number.isNaN(Number.parseInt(durationAttr, 10))) {
+          autoplayDelay = Number.parseInt(durationAttr, 10);
+        }
+      }
+
+      const autoplayConfig = hasAutoplay
+        ? {
+            delay: autoplayDelay,
+            disableOnInteraction: false,
+            pauseOnMouseEnter: true,
+          }
+        : false;
+
       this.swiper = new Swiper(swiperEl, {
         effect: hasCrossfade ? 'fade' : 'slide',
         loop: true,
+        autoplay: autoplayConfig,
         spaceBetween: hasCrossfade ? 0 : gap,
         slidesPerView: hasCrossfade ? 1 : 'auto',
         navigation: navigationConfig,
